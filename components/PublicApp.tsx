@@ -100,7 +100,16 @@ export default function PublicApp() {
 
   // Time and the random verse only exist in the browser — render after mount.
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    // Coming back from the carpool page: don't replay the verse intro.
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("skipintro")) {
+      setSplash(false);
+      url.searchParams.delete("skipintro");
+      window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+    }
+    setMounted(true);
+  }, []);
   if (!mounted)
     return (
       <div className="splash" aria-busy="true">

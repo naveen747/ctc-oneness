@@ -434,3 +434,56 @@ img { max-width: 100%; display: block; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- Carpool ---------- */
+.carpool-hero { margin-top: 8px; border-radius: var(--r-lg); overflow: hidden; background: var(--paper); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.carpool-hero-text { padding: 16px 18px 18px; }
+.carpool-hero-text h1 { font-family: var(--display); font-size: 28px; margin: 4px 0 6px; }
+.drive-scene { position: relative; height: 150px; overflow: hidden; background: linear-gradient(180deg, #ffe9b8 0%, #fff4dc 55%, #f6ecd2 100%); }
+.drive-sun { position: absolute; right: 14%; top: 18px; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle, #ffd56b 0 55%, rgba(255, 213, 107, 0) 70%); animation: sunGlow 3s ease-in-out infinite alternate; }
+@keyframes sunGlow { to { transform: scale(1.12); } }
+.drive-hills { position: absolute; left: -10%; right: -10%; bottom: 36px; height: 60px; background: radial-gradient(60% 100% at 20% 100%, #b9d7a5 0 60%, transparent 61%), radial-gradient(50% 90% at 70% 100%, #a3c98d 0 60%, transparent 61%); }
+.drive-trees { position: absolute; left: 0; bottom: 34px; width: 200%; height: 40px; animation: scrollX 9s linear infinite; }
+.drive-trees span { position: absolute; bottom: 0; font-size: 26px; }
+.drive-road { position: absolute; left: 0; right: 0; bottom: 0; height: 38px; background: #3a3f4b; overflow: hidden; }
+.drive-road i { position: absolute; left: 0; top: 17px; width: 200%; height: 4px; background: repeating-linear-gradient(90deg, #f6ecd2 0 26px, transparent 26px 52px); animation: scrollX 1.2s linear infinite; }
+@keyframes scrollX { to { transform: translateX(-50%); } }
+.drive-car { position: absolute; left: 50%; bottom: 14px; translate: -50% 0; width: 120px; height: auto; overflow: visible; animation: carIn 1.4s cubic-bezier(.2,.9,.3,1) both; }
+@keyframes carIn { from { transform: translateX(-140vw); } to { transform: none; } }
+.drive-car .car-body { animation: bob .5s ease-in-out infinite alternate; }
+@keyframes bob { to { transform: translateY(-1.5px); } }
+.drive-car .wheel { animation: wheelSpin .5s linear infinite; }
+@keyframes wheelSpin { to { transform: rotate(360deg); } }
+.drive-puff { position: absolute; left: calc(50% - 76px); bottom: 22px; width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,.85); animation: puff 1s ease-out infinite; }
+@keyframes puff { from { opacity: .9; transform: none; } to { opacity: 0; transform: translate(-30px, -8px) scale(2.4); } }
+
+.carpool-search { position: relative; margin-top: 14px; }
+.carpool-search svg { position: absolute; left: 14px; top: 50%; translate: 0 -50%; width: 18px; height: 18px; color: var(--ink-3); }
+.carpool-search .input { padding-left: 42px; border-radius: 999px; }
+
+.car-list { display: grid; gap: 12px; margin-top: 14px; }
+.car-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden; border-top: 5px solid var(--car); animation: rise .5s both; }
+.car-head { display: flex; align-items: center; gap: 12px; padding: 14px 14px 8px; }
+.car-ic { flex: none; width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center; font-size: 24px; background: color-mix(in srgb, var(--car) 14%, white); }
+.car-driver { flex: 1; min-width: 0; display: grid; }
+.car-label { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+.car-driver b { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phone-link { font-size: 13px; font-weight: 700; color: var(--maroon); text-decoration: none; margin-top: 1px; }
+.car-count { flex: none; text-align: center; min-width: 62px; padding: 8px 6px; border-radius: 16px; color: #fff; background: var(--car); box-shadow: 0 8px 18px -10px var(--car); }
+.car-count b { display: block; font-family: var(--display); font-size: 24px; line-height: 1; font-variant-numeric: lining-nums; }
+.car-count span { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.seat-dots { display: flex; gap: 5px; padding: 0 14px 10px 72px; }
+.seat-dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--car); opacity: .75; }
+.riders { list-style: none; margin: 0; padding: 0; border-top: 1px dashed var(--line); }
+.riders li { display: flex; align-items: center; gap: 10px; padding: 11px 14px; }
+.riders li + li { border-top: 1px solid var(--line); }
+.rider-name { flex: 1; min-width: 0; display: grid; }
+.rider-name b { font-size: 15px; }
+.rider-name span { font-size: 12px; color: var(--ink-3); font-weight: 600; }
+.carpool-cta { display: flex; align-items: center; gap: 12px; margin-top: 10px; padding: 12px 14px; border-radius: 20px; text-decoration: none; color: var(--ink); background: linear-gradient(135deg, #fff6df, #fde9b8); border: 1px solid rgba(201,162,75,.45); box-shadow: var(--shadow-sm); transition: transform .15s; overflow: hidden; }
+.carpool-cta:active { transform: scale(.97); }
+.carpool-cta .cc-car { flex: none; font-size: 28px; display: inline-block; animation: ccDrive 2.4s ease-in-out infinite; }
+@keyframes ccDrive { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(6px) rotate(-3deg); } }
+.carpool-cta b { display: block; font-size: 15px; }
+.carpool-cta small { color: #6f5414; font-weight: 600; font-size: 12px; }
+.carpool-cta svg { margin-left: auto; width: 20px; height: 20px; color: var(--maroon); flex: none; }

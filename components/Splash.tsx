@@ -9,8 +9,8 @@ export default function Splash({ ready, onDone }: { ready: boolean; onDone: () =
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
-    const a = setTimeout(() => setMinDone(true), 3200);
-    const b = setTimeout(() => setLeaving(true), 7000); // never block longer than this
+    const a = setTimeout(() => setMinDone(true), 6400);
+    const b = setTimeout(() => setLeaving(true), 14000); // never block longer than this
     return () => {
       clearTimeout(a);
       clearTimeout(b);

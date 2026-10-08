@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { EVENT } from "@/lib/content";
+import { CARS } from "@/lib/carpool";
 import { TEAMS, type TeamId } from "@/lib/teams";
 import type { TeamTotals } from "@/lib/types";
 import Icon from "./Icon";
@@ -51,6 +52,14 @@ export function EventInfo() {
       </div>
       <a className="btn btn-navy btn-block" style={{ marginTop: 12 }} href={EVENT.mapsUrl} target="_blank" rel="noopener noreferrer">
         <Icon name="pin" /> Open location in Maps
+      </a>
+      <a className="carpool-cta" href="/carpool">
+        <span className="cc-car" aria-hidden>🚗</span>
+        <span>
+          <b>Carpool: find your ride</b>
+          <small>{CARS.length} cars · drivers, riders &amp; phone numbers</small>
+        </span>
+        <Icon name="arrow" />
       </a>
     </div>
   );
