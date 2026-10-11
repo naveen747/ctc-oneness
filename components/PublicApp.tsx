@@ -11,8 +11,10 @@ import Icon from "./Icon";
 import { CheerSection, EventInfo, Hero, LockedTeaser } from "./Hype";
 import { Leaderboard, RaceChart, ResultsFeed, Stats } from "./Scoreboard";
 import { RulesView, TeamsView } from "./TeamsRules";
+import { FeedbackCTA, PhotoHero, Recap } from "./AfterEvent";
+import FeedbackView, { FEEDBACK_DONE_KEY } from "./Feedback";
 
-type Tab = "home" | "scores" | "teams" | "rules";
+type Tab = "home" | "scores" | "teams" | "rules" | "feedback";
 const zero: TeamTotals = { green: 0, red: 0, blue: 0, yellow: 0 };
 const START = Date.parse(EVENT.startISO);
 
@@ -40,6 +42,13 @@ export default function PublicApp() {
   const prevOpen = useRef<boolean | null>(null);
 
   const open = !!board?.open;
+  const ended = !!board?.ended;
+  const [fbDone, setFbDone] = useState(false);
+  useEffect(() => {
+    try {
+      setFbDone(!!localStorage.getItem(FEEDBACK_DONE_KEY));
+    } catch {}
+  }, []);
   const totals = board?.totals ?? zero;
   const results = board?.results ?? [];
 
@@ -130,7 +139,9 @@ export default function PublicApp() {
             <span>CTC Family Retreat 2026</span>
           </div>
           <div className="spacer" />
-          {open ? (
+          {ended ? (
+            <span className="chip">THANK YOU 💛</span>
+          ) : open ? (
             <span className="live-pill"><span className="live-dot" /> LIVE</span>
           ) : (
             <span className="chip">10 OCT · 8 AM</span>
@@ -151,7 +162,22 @@ export default function PublicApp() {
           </div>
         )}
 
-        {tab === "home" && (
+        {tab === "home" && ended && board && (
+          <main>
+            <PhotoHero />
+            <FeedbackCTA done={fbDone} open={board.feedbackOpen} onGo={() => go("feedback")} />
+            <Recap board={board} onScores={() => go("scores")} />
+            {!fbDone && board.feedbackOpen && (
+              <section className="section">
+                <button className="btn btn-primary btn-block" style={{ minHeight: 54 }} onClick={() => go("feedback")}>
+                  <Icon name="edit" /> Share your feedback (anonymous)
+                </button>
+              </section>
+            )}
+          </main>
+        )}
+
+        {tab === "home" && !ended && (
           <main>
             {!open ? (
               <>
@@ -205,8 +231,8 @@ export default function PublicApp() {
             ) : (
               <>
                 <section className="section">
-                  <div className="section-title"><h2>Scoreboard</h2><small>Win +10 · Runner-up +5</small></div>
-                  <Leaderboard totals={totals} wins={board?.wins} gains={gains} />
+                  <div className="section-title"><h2>{ended ? "Final scoreboard" : "Scoreboard"}</h2><small>Win +10 · Runner-up +5</small></div>
+                  <Leaderboard totals={totals} wins={board?.wins} gains={gains} final={ended} />
                 </section>
                 {board?.wins && (
                   <section className="section">
@@ -227,6 +253,7 @@ export default function PublicApp() {
         )}
 
         {tab === "teams" && <TeamsView members={board?.members} open={open} />}
+        {tab === "feedback" && <FeedbackView active onDone={() => setFbDone(true)} />}
         {tab === "rules" && (
           <main>
             <RulesView />
@@ -244,16 +271,24 @@ export default function PublicApp() {
       {toast && <div className="toast" role="status">{toast}</div>}
 
       <nav className="nav" aria-label="Sections">
-        {([
-          ["home", "home", "Home"],
-          ["scores", "trophy", "Scores"],
-          ["teams", "users", "Teams"],
-          ["rules", "list", "Rules"],
-        ] as [Tab, string, string][]).map(([id, icon, label]) => (
+        {((ended
+          ? [
+              ["home", "heart", "Thanks"],
+              ["scores", "trophy", "Scores"],
+              ["feedback", "edit", "Feedback"],
+              ["teams", "users", "Teams"],
+            ]
+          : [
+              ["home", "home", "Home"],
+              ["scores", "trophy", "Scores"],
+              ["teams", "users", "Teams"],
+              ["rules", "list", "Rules"],
+            ]) as [Tab, string, string][]).map(([id, icon, label]) => (
           <button key={id} aria-current={tab === id ? "page" : undefined} onClick={() => go(id)}>
             <Icon name={icon} />
             {label}
-            {id === "scores" && open && tab !== "scores" && results.length > seenResults && <span className="badge" />}
+            {id === "scores" && open && !ended && tab !== "scores" && results.length > seenResults && <span className="badge" />}
+            {id === "feedback" && !fbDone && board?.feedbackOpen && tab !== "feedback" && <span className="badge" />}
           </button>
         ))}
       </nav>

@@ -45,7 +45,7 @@ function Pts({ value }: { value: number }) {
   return <>{useCountUp(value)}</>;
 }
 
-export function Leaderboard({ totals, wins, gains }: { totals: TeamTotals; wins?: TeamTotals; gains: { team: TeamId; pts: number; key: number }[] }) {
+export function Leaderboard({ totals, wins, gains, final = false }: { totals: TeamTotals; wins?: TeamTotals; gains: { team: TeamId; pts: number; key: number }[]; final?: boolean }) {
   const rows = ranked(totals);
   const top = rows[0];
   const max = Math.max(10, top.pts);
@@ -59,20 +59,20 @@ export function Leaderboard({ totals, wins, gains }: { totals: TeamTotals; wins?
       {started && lead ? (
         <div className={`leader-card ${lead.team.id}`} style={{ background: lead.team.gradient }}>
           <div className="glow" />
-          <span className="crown"><Icon name="crown" /> Leading now</span>
+          <span className="crown"><Icon name="crown" /> {final ? "Champions" : "Leading now"}</span>
           <div className="lc-name">{lead.team.name}</div>
           <div className="lc-pts"><b><Pts value={lead.pts} /></b><span>points</span></div>
           <div className="lc-foot">
-            {second ? `${lead.pts - second.pts} points ahead of ${second.team.name}` : "Out in front!"}
+            {second ? `${lead.pts - second.pts} points ${final ? "clear of" : "ahead of"} ${second.team.name}` : "Out in front!"}
           </div>
         </div>
       ) : started ? (
         <div className="leader-card" style={{ background: "linear-gradient(135deg,#24365f,#13213f)" }}>
           <div className="glow" />
-          <span className="crown"><Icon name="crown" /> It's a tie at the top</span>
+          <span className="crown"><Icon name="crown" /> {final ? "Joint champions" : "It's a tie at the top"}</span>
           <div className="lc-name">{leaders.map((l) => l.team.short).join(" & ")}</div>
           <div className="lc-pts"><b><Pts value={top.pts} /></b><span>points each</span></div>
-          <div className="lc-foot">Next game decides it!</div>
+          <div className="lc-foot">{final ? "Shared glory. True oneness!" : "Next game decides it!"}</div>
         </div>
       ) : (
         <div className="leader-card" style={{ background: "linear-gradient(135deg,#8e1b24,#13213f)" }}>

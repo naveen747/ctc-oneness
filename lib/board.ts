@@ -37,6 +37,8 @@ export function buildBoard(s: Snapshot): Board {
     serverNow: new Date(now).toISOString(),
     start: EVENT.startISO,
     open,
+    ended: now >= Date.parse(EVENT.endISO),
+    feedbackOpen: s.settings.feedback_open,
     announcement: s.settings.announcement,
     cheers: s.cheers,
   };

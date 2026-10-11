@@ -46,3 +46,13 @@ Stack: Next.js on Vercel and Supabase Postgres. Visitors read a CDN-cached endpo
 - **Supabase free tier:** projects pause after a week with no activity. Open the site or admin once a day before the event.
 - **Changing content:** verses, Do's & Don'ts and event details live in `lib/content.ts`. Team names and colours live in `lib/teams.ts`.
 - **Running locally:** `npm install && npm run dev` runs with an in-memory demo database. The admin password is `admin123` unless `ADMIN_PASSWORD` is set.
+
+## After the event: thank-you page & anonymous feedback
+From 10 Oct, 6:00 PM IST (`EVENT.endISO` in `lib/content.ts`) the home page switches to a thank-you page with the group photo, the final podium, fun facts worked out from the scores, and an anonymous feedback form.
+
+**One-time setup:** in Supabase → SQL Editor, paste `supabase/002_feedback.sql` and click Run. Without this step the feedback form can't save answers.
+
+- **What's stored:** feedback holds no names, phone numbers, emails or IP addresses.
+- **What the public sees:** only the live favourite-games ranking, the joy meter and the "want more events" share.
+- **What only admin sees:** food, carpool, resort and fee ratings, plus the comments, under **Admin → Feedback**. They're also in the CSV download.
+- **Closing feedback:** use **Admin → Feedback → Close feedback**.

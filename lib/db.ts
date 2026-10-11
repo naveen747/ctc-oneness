@@ -7,6 +7,7 @@ export type LeaderboardMode = "auto" | "open" | "closed";
 export interface Settings {
   announcement: string;
   leaderboard_mode: LeaderboardMode;
+  feedback_open: boolean;
   updated_at: string;
 }
 export interface Participant {
@@ -33,6 +34,22 @@ export interface ScoreEntry {
 }
 export type Cheers = Record<TeamId, number>;
 
+export type MoreEvents = "yes" | "maybe" | "no";
+export interface FeedbackInput {
+  food: number; // 1-5
+  resort: number; // 1-5
+  fees: number; // 1-5
+  carpool: number; // 0 = didn't use, 1-5
+  overall: number; // 1-10
+  more_events: MoreEvents;
+  top_games: number[]; // game ids, best first, max 4
+  comment: string | null;
+}
+export interface FeedbackRow extends FeedbackInput {
+  id: number;
+  created_at: string;
+}
+
 export interface Snapshot {
   settings: Settings;
   participants: Participant[];
@@ -46,7 +63,7 @@ export class UserError extends Error {}
 interface Store {
   snapshot(opts?: { includeVoided?: boolean }): Promise<Snapshot>;
   cheersOnly(): Promise<{ settings: Settings; cheers: Cheers }>;
-  updateSettings(patch: Partial<Pick<Settings, "announcement" | "leaderboard_mode">>): Promise<void>;
+  updateSettings(patch: Partial<Pick<Settings, "announcement" | "leaderboard_mode" | "feedback_open">>): Promise<void>;
   addParticipants(rows: { name: string; team: TeamId; category: string | null }[]): Promise<number>;
   updateParticipant(id: number, patch: Partial<Pick<Participant, "name" | "team" | "category">>): Promise<void>;
   deleteParticipant(id: number): Promise<void>;
@@ -58,6 +75,8 @@ interface Store {
   voidGame(gameId: number): Promise<void>;
   voidAll(): Promise<void>;
   cheer(team: TeamId, prev: TeamId | null): Promise<void>;
+  addFeedback(f: FeedbackInput): Promise<void>;
+  listFeedback(): Promise<FeedbackRow[]>;
 }
 
 const emptyCheers = (): Cheers => ({ green: 0, red: 0, blue: 0, yellow: 0 });
@@ -78,10 +97,14 @@ class SupabaseStore implements Store {
   }
 
   private async settings(): Promise<Settings> {
-    const s = this.check(
-      await this.sb.from("settings").select("announcement,leaderboard_mode,updated_at").eq("id", 1).single()
-    );
-    return s as Settings;
+    // select("*") so the site keeps working even before 002_feedback.sql is run
+    const s = this.check(await this.sb.from("settings").select("*").eq("id", 1).single()) as Partial<Settings>;
+    return {
+      announcement: s.announcement ?? "",
+      leaderboard_mode: (s.leaderboard_mode ?? "auto") as LeaderboardMode,
+      feedback_open: s.feedback_open ?? true,
+      updated_at: s.updated_at ?? new Date().toISOString(),
+    };
   }
 
   private async cheers(): Promise<Cheers> {
@@ -115,7 +138,7 @@ class SupabaseStore implements Store {
     return { settings, cheers };
   }
 
-  async updateSettings(patch: Partial<Pick<Settings, "announcement" | "leaderboard_mode">>) {
+  async updateSettings(patch: Partial<Pick<Settings, "announcement" | "leaderboard_mode" | "feedback_open">>) {
     this.check(await this.sb.from("settings").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", 1));
   }
 
@@ -172,6 +195,15 @@ class SupabaseStore implements Store {
   async cheer(team: TeamId, prev: TeamId | null) {
     this.check(await this.sb.rpc("cheer", { p_new: team, p_old: prev }));
   }
+
+  async addFeedback(f: FeedbackInput) {
+    this.check(await this.sb.from("feedback").insert(f));
+  }
+  async listFeedback() {
+    return this.check(
+      await this.sb.from("feedback").select("*").order("created_at", { ascending: false }).limit(2000)
+    ) as FeedbackRow[];
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -180,7 +212,7 @@ class SupabaseStore implements Store {
 
 class MemoryStore implements Store {
   s: Snapshot = {
-    settings: { announcement: "", leaderboard_mode: "auto", updated_at: new Date().toISOString() },
+    settings: { announcement: "", leaderboard_mode: "auto", feedback_open: true, updated_at: new Date().toISOString() },
     participants: [],
     games: [],
     entries: [],
@@ -199,7 +231,7 @@ class MemoryStore implements Store {
   async cheersOnly() {
     return { settings: { ...this.s.settings }, cheers: { ...this.s.cheers } };
   }
-  async updateSettings(patch: Partial<Pick<Settings, "announcement" | "leaderboard_mode">>) {
+  async updateSettings(patch: Partial<Pick<Settings, "announcement" | "leaderboard_mode" | "feedback_open">>) {
     Object.assign(this.s.settings, patch, { updated_at: this.now() });
   }
   async addParticipants(rows: { name: string; team: TeamId; category: string | null }[]) {
@@ -245,6 +277,13 @@ class MemoryStore implements Store {
   async cheer(team: TeamId, prev: TeamId | null) {
     this.s.cheers[team]++;
     if (prev && prev !== team) this.s.cheers[prev] = Math.max(0, this.s.cheers[prev] - 1);
+  }
+  feedback: FeedbackRow[] = [];
+  async addFeedback(f: FeedbackInput) {
+    this.feedback.unshift({ ...f, id: this.seq++, created_at: this.now() });
+  }
+  async listFeedback() {
+    return structuredClone(this.feedback);
   }
 }
 

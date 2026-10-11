@@ -1,5 +1,5 @@
 import { isAdmin } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { db, type FeedbackRow } from "@/lib/db";
 import { teamById } from "@/lib/teams";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +29,18 @@ export async function GET() {
   lines.push("PARTICIPANTS");
   lines.push(["Name", "Team", "Category"].join(","));
   for (const p of s.participants) lines.push([p.name, teamById(p.team).name, p.category ?? ""].map(csv).join(","));
+
+  const fb: FeedbackRow[] = await db().listFeedback().catch(() => []);
+  if (fb.length) {
+    const gameName = (id: number) => s.games.find((g) => g.id === Number(id))?.name ?? `Game ${id}`;
+    lines.push("");
+    lines.push("FEEDBACK (anonymous)");
+    lines.push(["Food (1-5)", "Resort (1-5)", "Fees (1-5)", "Carpool (1-5, 0=not used)", "Overall (1-10)", "More events", "Game #1", "Game #2", "Game #3", "Game #4", "Comment"].join(","));
+    for (const f of fb) {
+      const g = [0, 1, 2, 3].map((i) => (f.top_games?.[i] != null ? gameName(f.top_games[i]) : ""));
+      lines.push([f.food, f.resort, f.fees, f.carpool, f.overall, f.more_events, ...g, f.comment ?? ""].map(csv).join(","));
+    }
+  }
 
   const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
   return new Response("﻿" + lines.join("\n"), {

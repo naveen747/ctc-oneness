@@ -2,10 +2,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CATEGORIES, TEAMS, teamById, type TeamId } from "@/lib/teams";
 import type { ResultItem, TeamTotals } from "@/lib/types";
+import type { AdminFeedbackSummary, RatingStat } from "@/lib/feedback";
 import Icon from "./Icon";
 
 interface AdminState {
-  settings: { announcement: string; leaderboard_mode: "auto" | "open" | "closed" };
+  settings: { announcement: string; leaderboard_mode: "auto" | "open" | "closed"; feedback_open: boolean };
+  feedback: AdminFeedbackSummary | null;
   publicOpen: boolean;
   participants: { id: number; name: string; team: TeamId; category: string | null }[];
   games: { id: number; name: string; sort_order: number }[];
@@ -15,7 +17,7 @@ interface AdminState {
   voidedCount: number;
 }
 
-type Tab = "score" | "games" | "people" | "settings";
+type Tab = "score" | "games" | "people" | "feedback" | "settings";
 type Pick = "none" | "win" | "run";
 
 interface ConfirmReq {
@@ -114,8 +116,8 @@ export default function AdminApp() {
 
       <div className="admin-tabs" style={{ marginTop: 10 }}>
         <div className="seg">
-          {([["score", "Score"], ["games", "Games"], ["people", "People"], ["settings", "Settings"]] as [Tab, string][]).map(([id, l]) => (
-            <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}>{l}</button>
+          {([["score", "Score"], ["games", "Games"], ["people", "People"], ["feedback", "Feedback"], ["settings", "Settings"]] as [Tab, string][]).map(([id, l]) => (
+            <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)} style={{ fontSize: 12.5, padding: "0 2px" }}>{l}</button>
           ))}
         </div>
       </div>
@@ -123,6 +125,7 @@ export default function AdminApp() {
       {tab === "score" && <ScoreTab state={state} act={act} busy={busy} setConfirm={setConfirm} goGames={() => setTab("games")} />}
       {tab === "games" && <GamesTab state={state} act={act} busy={busy} setConfirm={setConfirm} />}
       {tab === "people" && <PeopleTab state={state} act={act} busy={busy} setConfirm={setConfirm} />}
+      {tab === "feedback" && <FeedbackTab state={state} act={act} busy={busy} setConfirm={setConfirm} />}
       {tab === "settings" && <SettingsTab state={state} act={act} busy={busy} setConfirm={setConfirm} onLogout={async () => { await fetch("/api/admin/logout", { method: "POST" }); setAuthed(false); }} />}
 
       {confirm && <ConfirmModal req={confirm} onClose={() => setConfirm(null)} />}
@@ -534,6 +537,115 @@ function SettingsTab({ state, act, busy, setConfirm, onLogout }: TabProps & { on
 
       <section className="section">
         <button className="btn btn-ghost btn-block" onClick={onLogout}><Icon name="logout" /> Log out</button>
+      </section>
+    </div>
+  );
+}
+
+/* ------------------------------ Feedback ----------------------------- */
+
+const RATE_COLORS = ["#e5484d", "#f08a3c", "#f2c94c", "#8fd16a", "#2fb26a"];
+
+function RateRow({ label, stat, extra }: { label: string; stat: RatingStat; extra?: string }) {
+  return (
+    <div className="rate-row">
+      <div>
+        <b>{label}</b>
+        <div className="muted" style={{ fontSize: 11 }}>{stat.count} rated{extra ? ` · ${extra}` : ""}</div>
+      </div>
+      <div className="rate-dist" title="1 to 5, left to right">
+        {stat.dist.map((n, i) => (
+          <i key={i} style={{ width: `${stat.count ? (n / stat.count) * 100 : 0}%`, background: RATE_COLORS[i] }} />
+        ))}
+      </div>
+      <span className="rate-avg">{stat.avg ?? "–"}</span>
+    </div>
+  );
+}
+
+function FeedbackTab({ state, act, busy }: TabProps) {
+  const f = state.feedback;
+  const open = state.settings.feedback_open;
+  if (!f)
+    return (
+      <section className="section">
+        <div className="card pad">
+          <h3 style={{ marginTop: 0, fontFamily: "var(--display)" }}>One-time setup needed</h3>
+          <p className="muted">
+            Run <b>supabase/002_feedback.sql</b> in Supabase → SQL Editor to switch on feedback. Until then the feedback form can't save answers.
+          </p>
+        </div>
+      </section>
+    );
+  const me = f.moreEvents;
+  const meTotal = me.yes + me.maybe + me.no;
+  const pct = (n: number) => (meTotal ? Math.round((n / meTotal) * 100) : 0);
+  return (
+    <div>
+      <section className="section">
+        <div className="mini-totals" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
+          <div style={{ background: "linear-gradient(135deg,#24365f,#13213f)" }}><b>{f.count}</b>Responses</div>
+          <div style={{ background: "linear-gradient(135deg,#2fb26a,#1d6e33)" }}><b>{f.joy ?? "–"}</b>Joy /10</div>
+          <div style={{ background: "linear-gradient(135deg,#c0333c,#8e1b24)" }}><b>{pct(me.yes)}%</b>Want more</div>
+        </div>
+        <div className="row" style={{ marginTop: 10 }}>
+          <span className="muted grow" style={{ fontSize: 13 }}>
+            Feedback form is <b style={{ color: open ? "#1d7a34" : "#b3262f" }}>{open ? "OPEN" : "CLOSED"}</b>
+          </span>
+          <button className={`btn btn-sm ${open ? "btn-ghost" : "btn-gold"}`} disabled={busy} onClick={() => act({ action: "settings", feedback_open: !open }, open ? "Feedback closed" : "Feedback opened")}>
+            {open ? "Close feedback" : "Reopen feedback"}
+          </button>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-title"><h2>Ratings</h2><small>Average out of 5</small></div>
+        <div className="card pad" style={{ paddingTop: 8, paddingBottom: 8 }}>
+          <RateRow label="Food" stat={f.food} />
+          <RateRow label="Carpool" stat={f.carpool} extra={`${f.carpool.notUsed} didn't use`} />
+          <RateRow label="Resort" stat={f.resort} />
+          <RateRow label="Reg. fee" stat={f.fees} />
+        </div>
+        <p className="muted" style={{ fontSize: 12, margin: "6px 2px 0" }}>Bars show 1 (red) to 5 (green). Fee: 1 = too high, 5 = great value.</p>
+      </section>
+
+      <section className="section">
+        <div className="section-title"><h2>More events?</h2></div>
+        <div className="card pad">
+          <div className="ms-bar">
+            <i style={{ width: `${pct(me.yes)}%`, background: "#2fb26a" }} />
+            <i style={{ width: `${pct(me.maybe)}%`, background: "#f2c94c" }} />
+            <i style={{ width: `${pct(me.no)}%`, background: "#e5484d" }} />
+          </div>
+          <p className="muted" style={{ margin: "8px 0 0", fontSize: 13 }}>
+            🙌 Yes {me.yes} · 🤔 Maybe {me.maybe} · Not really {me.no}
+          </p>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-title"><h2>Favourite games</h2><small>4-3-2-1 points</small></div>
+        <div className="card trend-card">
+          {f.games.map((g, i) => (
+            <div key={g.id} className="trend-row">
+              <span className={`lb-rank${i < 3 && g.score ? ` r${i + 1}` : ""}`}>{i + 1}</span>
+              <div className="trend-main">
+                <div className="trend-top"><b>{g.name}</b><span>{g.score} {g.score === 1 ? "pt" : "pts"}</span></div>
+                <small>{g.votes} top-4 picks · {g.firsts}× #1</small>
+              </div>
+            </div>
+          ))}
+          {!f.games.length && <p className="muted">No games scored.</p>}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-title"><h2>Comments</h2><small>{f.comments.length}</small></div>
+        <div style={{ display: "grid", gap: 8 }}>
+          {f.comments.map((c, i) => <div key={i} className="comment">{c}</div>)}
+          {!f.comments.length && <div className="card empty"><b>No comments yet.</b></div>}
+        </div>
+        <a className="btn btn-gold btn-block" style={{ marginTop: 14 }} href="/api/admin/export"><Icon name="download" /> Download CSV (includes feedback)</a>
       </section>
     </div>
   );

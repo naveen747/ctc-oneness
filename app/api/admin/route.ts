@@ -3,6 +3,7 @@ import { isAdmin } from "@/lib/auth";
 import { db, UserError, type LeaderboardMode } from "@/lib/db";
 import { buildBoard, buildResults, isOpen } from "@/lib/board";
 import { isTeamId, type TeamId, WIN_POINTS, RUNNER_POINTS } from "@/lib/teams";
+import { summarize } from "@/lib/feedback";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,17 @@ async function state() {
   const snap = await db().snapshot({ includeVoided: true });
   const active = { ...snap, entries: snap.entries.filter((e) => !e.voided) };
   const board = buildBoard({ ...active, settings: { ...snap.settings, leaderboard_mode: "open" } });
+  const played = buildResults(active).map((r) => ({ id: r.gameId, name: r.name }));
+  // If 002_feedback.sql hasn't been run yet, the rest of admin still works.
+  const feedback = await db()
+    .listFeedback()
+    .then((rows) => summarize(rows, played))
+    .catch((e) => {
+      console.error("feedback unavailable", e);
+      return null;
+    });
   return {
+    feedback,
     settings: snap.settings,
     publicOpen: isOpen(snap.settings),
     participants: snap.participants,
@@ -159,7 +170,8 @@ export async function POST(req: Request) {
         break;
       }
       case "settings": {
-        const patch: { announcement?: string; leaderboard_mode?: LeaderboardMode } = {};
+        const patch: { announcement?: string; leaderboard_mode?: LeaderboardMode; feedback_open?: boolean } = {};
+        if (typeof body.feedback_open === "boolean") patch.feedback_open = body.feedback_open;
         if (typeof body.announcement === "string") patch.announcement = body.announcement.trim().slice(0, 200);
         if (["auto", "open", "closed"].includes(body.leaderboard_mode)) patch.leaderboard_mode = body.leaderboard_mode;
         await store.updateSettings(patch);

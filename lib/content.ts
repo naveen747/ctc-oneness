@@ -8,6 +8,8 @@ export const EVENT = {
   tagline: ["Connected in Faith", "United in Love", "Fellowship in Christ"],
   // 10 October 2026, 8:00 AM India Standard Time
   startISO: "2026-10-10T08:00:00+05:30",
+  // After this moment the site switches to the thank-you / recap / feedback mode
+  endISO: "2026-10-10T18:00:00+05:30",
   dateLabel: "Saturday, 10 October 2026",
   timeLabel: "Report by 8:00 AM sharp",
   venue: "Khedda Resorts",

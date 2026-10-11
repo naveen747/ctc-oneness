@@ -25,6 +25,8 @@ export interface Board {
   serverNow: string;
   start: string;
   open: boolean;
+  ended: boolean;
+  feedbackOpen: boolean;
   announcement: string;
   cheers: TeamTotals;
   totals?: TeamTotals;
