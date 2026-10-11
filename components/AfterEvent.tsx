@@ -60,7 +60,8 @@ export function Recap({ board, onScores }: { board: Board; onScores: () => void 
 
   // Podium order: 2nd, 1st, 3rd (by sorted position), 4th below
   const podium = [ranked[1], ranked[0], ranked[2]].filter(Boolean);
-  const heights = [96, 128, 76];
+  // Height follows the rank, so tied teams stand on equal blocks
+  const heightFor = (rank: number) => ({ 1: 128, 2: 96, 3: 76 } as Record<number, number>)[rank] ?? 64;
 
   return (
     <>
@@ -96,7 +97,7 @@ export function Recap({ board, onScores }: { board: Board; onScores: () => void 
                       <b className="pod-name">{t.name}</b>
                       <span className="pod-pts">{r.pts} pts</span>
                     </div>
-                    <div className={`pod-block ${t.id}`} style={{ height: heights[i], background: t.gradient }}>
+                    <div className={`pod-block ${t.id}`} style={{ height: heightFor(r.rank), background: t.gradient }}>
                       <span>{r.rank}</span>
                     </div>
                   </div>

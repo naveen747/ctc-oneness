@@ -35,6 +35,18 @@ export interface AdminFeedbackSummary extends PublicFeedbackSummary {
 
 export const RANK_POINTS = [4, 3, 2, 1];
 
+/**
+ * Games left out of the "top 4" feedback list: repeat rounds (Batch 2 / Group 2)
+ * and the combined "Segregation game 2nd & ladies paper game" round.
+ * They still count on the scoreboard.
+ */
+export function isFeedbackGame(name: string): boolean {
+  const n = name.toLowerCase().replace(/\s+/g, " ");
+  if (/\b(batch|group|grp)\s*-?\s*(2|ii|two)\b/.test(n)) return false;
+  if (/segregation/.test(n) && /(2nd|second|ladies|paper)/.test(n)) return false;
+  return true;
+}
+
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
 function rating(values: number[], buckets = 5): RatingStat {

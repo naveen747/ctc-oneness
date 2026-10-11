@@ -242,6 +242,12 @@ export default function FeedbackView({ active, onDone }: { active: boolean; onDo
   };
 
   const options = data?.options ?? [];
+  // Drop any saved picks for games that are no longer in the list
+  useEffect(() => {
+    if (!data) return;
+    const ids = new Set(data.options.map((g) => g.id));
+    setD((x) => (x.games.every((g) => ids.has(g)) ? x : { ...x, games: x.games.filter((g) => ids.has(g)) }));
+  }, [data]);
   const needGames = options.length > 0;
   const want = Math.min(4, options.length);
   const answered = [d.food, d.carpool, d.resort, d.fees, !needGames || d.games.length ? 1 : null, d.overall, d.more].filter((x) => x !== null).length;

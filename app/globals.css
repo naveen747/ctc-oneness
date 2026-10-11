@@ -522,7 +522,7 @@ img { max-width: 100%; display: block; }
 .champ-line { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; font-size: 14px; color: var(--ink-2); margin-bottom: 8px; text-align: center; }
 .champ-line svg { width: 18px; height: 18px; color: var(--gold); }
 .champ-line b { color: var(--ink); }
-.podium { display: grid; grid-template-columns: 1fr 1.1fr 1fr; align-items: end; gap: 8px; margin-top: 8px; }
+.podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 8px; margin-top: 8px; }
 .pod-col { display: grid; gap: 6px; animation: podUp .9s cubic-bezier(.2,.9,.3,1.1) both; }
 @keyframes podUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
 .pod-top { display: grid; justify-items: center; text-align: center; gap: 1px; }

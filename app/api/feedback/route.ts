@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db, type FeedbackInput, type MoreEvents } from "@/lib/db";
 import { buildResults } from "@/lib/board";
-import { summarize, toPublic, type GameOption } from "@/lib/feedback";
+import { isFeedbackGame, summarize, toPublic, type GameOption } from "@/lib/feedback";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +9,7 @@ const noStore = { "Cache-Control": "no-store" };
 
 async function playedGames(): Promise<{ options: GameOption[]; open: boolean }> {
   const snap = await db().snapshot();
-  const played = buildResults(snap).map((r) => ({ id: r.gameId, name: r.name }));
+  const played = buildResults(snap).map((r) => ({ id: r.gameId, name: r.name })).filter((g) => isFeedbackGame(g.name));
   return { options: played, open: snap.settings.feedback_open };
 }
 

@@ -3,7 +3,7 @@ import { isAdmin } from "@/lib/auth";
 import { db, UserError, type LeaderboardMode } from "@/lib/db";
 import { buildBoard, buildResults, isOpen } from "@/lib/board";
 import { isTeamId, type TeamId, WIN_POINTS, RUNNER_POINTS } from "@/lib/teams";
-import { summarize } from "@/lib/feedback";
+import { isFeedbackGame, summarize } from "@/lib/feedback";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +25,7 @@ async function state() {
   const snap = await db().snapshot({ includeVoided: true });
   const active = { ...snap, entries: snap.entries.filter((e) => !e.voided) };
   const board = buildBoard({ ...active, settings: { ...snap.settings, leaderboard_mode: "open" } });
-  const played = buildResults(active).map((r) => ({ id: r.gameId, name: r.name }));
+  const played = buildResults(active).map((r) => ({ id: r.gameId, name: r.name })).filter((g) => isFeedbackGame(g.name));
   // If 002_feedback.sql hasn't been run yet, the rest of admin still works.
   const feedback = await db()
     .listFeedback()
